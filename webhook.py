@@ -40,11 +40,11 @@ def main():
 
     global tower, platform_name
     tower = {
-        'hostname': '212.121.177.199',
-        'username': 'pycharm',
-        'password': 'PyCh4rm',
-        'client_id': 'obgQYVVoOeGZ6PoVuoyeYXHyglrHFAx7ZHysp5F0',
-        'client_secret': 'JnbyMNlgGlWX1zZ5A3OmHAUQ5e8UI2vdO15SqDCgj85eEHYM74jgad5BnQ6vVuHmVkFNEmb3MZNk8xEXeJNm1br5gvvbIQQRwlbpYnxrtgxkboRwgaIWR18GWntIdArW'
+        'hostname': 'extra_tower_hostname',
+        'username': 'extra_tower_username',
+        'password': 'extra_tower_password',
+        'client_id': 'extra_client_id',
+        'client_secret': 'extra_client_secret'
     }
     platform_name = 'TotalInbound'
 
