@@ -6,13 +6,15 @@ import argparse
 import configparser
 import pprint
 
-
-# imported parameters in .ini file :
-# section
-ini_api_section             = "Listener"
-# parameters in section
-ini_api_bind_address        = "BindAddr"
-ini_api_bind_port           = "BindPort"
+global tower, platform_name
+tower = {
+    'hostname': '212.121.177.199',
+    'username': 'webhook-nginx-unit',
+    'password': 'webhook-nginx-unit',
+    'client_id': 'Ric3P6v9MGxTMOivs9xNeBVFw4IhpKyteWqOEUAi',
+    'client_secret': 'Lbw165xlH53vE03D8J2teJLqx30Xq5bPs3kysqbQSPDbOSlGkiJPlqMpZc3HOQ1FjF0YkcdMjiRu1z4BLzT9qmidJDHXQsFQ9BSJ2E2ymfWJlYxBFzzBLFXlt0Eix2sl'
+}
+platform_name = 'TotalInbound'
 
 
 # -------------- API --------------
