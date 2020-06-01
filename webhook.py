@@ -17,134 +17,9 @@ ini_api_bind_port           = "BindPort"
 
 # -------------- API --------------
 # listener
-webhook_listener = Flask(__name__)
-api = Api(webhook_listener)
-swagger = Swagger(webhook_listener)
-
-
-def main():
-    # Handling arguments
-    """
-    args                = get_args()
-    debug               = args.debug
-    verbose             = args.verbose
-    log_file            = args.logfile
-    ini_file            = args.inifile
-
-    """
-    # Bouchonnage arguments
-    debug = True
-    verbose = True
-    log_file = 'logs/webhook.log'
-    ini_file = 'webhook.ini'
-
-    global tower, platform_name
-    tower = {
-        'hostname': 'extra_tower_hostname',
-        'username': 'extra_tower_username',
-        'password': 'extra_tower_password',
-        'client_id': 'extra_client_id',
-        'client_secret': 'extra_client_secret'
-    }
-    platform_name = 'TotalInbound'
-
-    # Logging settings
-    global logger
-    logger = setup_logging(debug, verbose, log_file)
-
-    # Load configuration
-    global config
-    config = configparser.RawConfigParser()
-    config.read(ini_file)
-
-    # Get parameters from config (.ini file)
-    global param
-    param = ConfigParameter()
-
-    # Step 4. Start API
-    logger.warning("webhook started")
-    pprint.pprint("API dev portal: http://127.0.0.1:8000/apidocs/")
-    webhook_listener.run(
-        debug=debug,
-        host=param.api_bind_address,
-        port=param.api_bind_port,
-        use_reloader=True
-    )
-
-
-def get_args():
-    """
-    Supports the command-line arguments listed below.
-    """
-
-    parser = argparse.ArgumentParser(description="Run webhook.")
-    parser.add_argument('-d', '--debug',
-                        required=False,
-                        help='Enable debug output',
-                        dest='debug',
-                        action='store_true')
-    parser.add_argument('-v', '--verbose',
-                        required=False,
-                        help='Enable verbose output',
-                        dest='verbose',
-                        action='store_true')
-    parser.add_argument('-l', '--log-file',
-                        required=False,
-                        help='File to log to',
-                        dest='logfile',
-                        type=str,
-                        default="webhook.log")
-    parser.add_argument('-p', '--ini-file',
-                        required=False,
-                        help='File that contain parameters',
-                        dest='inifile',
-                        type=str,
-                        default="webhook.ini")
-    args = parser.parse_args()
-    return args
-
-
-def setup_logging(debug, verbose, log_file):
-    import logging
-
-    if debug:
-        log_level = logging.DEBUG
-    elif verbose:
-        log_level = logging.INFO
-    else:
-        log_level = logging.WARNING
-
-    logging.basicConfig(filename=log_file, format='%(asctime)s %(levelname)s %(message)s', level=log_level)
-    return logging.getLogger(__name__)
-
-
-def output_txt_response_format(data, code, headers=None):
-    resp = make_response(data, code)
-    resp.headers.extend(headers or {})
-    return resp
-
-
-class ConfigParameter(object):
-    def __init__(self):
-        # Initialize Defaults
-        self.api_bind_address = '127.0.0.1'
-        self.api_bind_port = '80'
-
-        # Get attributes from .ini file
-        self.parse_file()
-
-    def parse_file(self):
-        logger.info("INI file: get parameters")
-        # API
-        if config.has_section(ini_api_section):
-            # BindAddr
-            if config.has_option(ini_api_section, ini_api_bind_address):
-                self.api_bind_address = config.get(ini_api_section, ini_api_bind_address)
-            if config.has_option(ini_api_section, ini_api_bind_port):
-                self.api_bind_port = config.get(ini_api_section, ini_api_bind_port)
-        else:
-            logger.error("No Listener Section")
-
+application = Flask(__name__)
+api = Api(application)
+swagger = Swagger(application)
 
 @swagger.definition('vmss_context', tags=['v2_model'])
 class VMSSContext(object):
@@ -249,5 +124,7 @@ class ApiAutoScale(Resource):
 api.add_resource(ApiAutoScale, '/autoscale/<vmss_name>')
 
 # Start program
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    application.run(
+        port=5000
+    )
