@@ -6,16 +6,14 @@ import argparse
 import configparser
 import pprint
 
-global tower, platform_name
+global tower
 tower = {
-    'hostname': '212.121.177.199',
+    'hostname': '10.0.0.30',
     'username': 'webhook-nginx-unit',
     'password': 'webhook-nginx-unit',
     'client_id': 'Ric3P6v9MGxTMOivs9xNeBVFw4IhpKyteWqOEUAi',
     'client_secret': 'Lbw165xlH53vE03D8J2teJLqx30Xq5bPs3kysqbQSPDbOSlGkiJPlqMpZc3HOQ1FjF0YkcdMjiRu1z4BLzT9qmidJDHXQsFQ9BSJ2E2ymfWJlYxBFzzBLFXlt0Eix2sl'
 }
-platform_name = 'TotalInbound'
-
 
 # -------------- API --------------
 # listener
@@ -107,20 +105,58 @@ class ApiAutoScale(Resource):
             port=443,
         )
         orchestrator.get_token()
+        extra_vars = {
+            'extra_location': data_json['context']['resourceRegion'],
+            'extra_vmss_name': data_json['context']['resourceName'],
+            'extra_vmss_id': data_json['context']['resourceId'],
+        }
 
-        if vmss_name.startswith('nginx'):
+        if vmss_name.startswith('nginxwaf'):
             if data_json['operation'].lower() == 'scale out':
                 orchestrator.workflow_job_templates__id_launch(
-                    name='wf-autoscale-nginx-scale-out',
-                    extra_vars={
-                        'extra_location': data_json['context']['resourceRegion'],
-                        'extra_vmss_name': data_json['context']['resourceName'],
-                        'extra_vmss_id': data_json['context']['resourceId'],
-                        'extra_platform_name': platform_name,
-                    }
+                    name='wf-scale_out_nginx_app_protect',
+                    extra_vars=extra_vars
                 )
-
-        return "Job launched", 201
+            elif data_json['operation'].lower() == 'scale in':
+                orchestrator.workflow_job_templates__id_launch(
+                    name='wf-scale_in_nginx',
+                    extra_vars=extra_vars
+                )
+            else:
+                error_msg = "unknown operation:" + data_json['operation']
+                return error_msg, 403
+        elif vmss_name.startswith('nginxapigw'):
+            if data_json['operation'].lower() == 'scale out':
+                orchestrator.workflow_job_templates__id_launch(
+                    name='wf-scale_out_nginx_second_line',
+                    extra_vars=extra_vars
+                )
+            elif data_json['operation'].lower() == 'scale in':
+                orchestrator.workflow_job_templates__id_launch(
+                    name='wf-scale_in_nginx',
+                    extra_vars=extra_vars
+                )
+            else:
+                error_msg = "unknown operation:" + data_json['operation']
+                return error_msg, 403
+        elif vmss_name.startswith('awaf'):
+            if data_json['operation'].lower() == 'scale out':
+                orchestrator.workflow_job_templates__id_launch(
+                    name='wf-scale_out_bigip',
+                    extra_vars=extra_vars
+                )
+            elif data_json['operation'].lower() == 'scale in':
+                orchestrator.workflow_job_templates__id_launch(
+                    name='wf-scale_in_bigip',
+                    extra_vars=extra_vars
+                )
+            else:
+                error_msg = "unknown operation:" + data_json['operation']
+                return error_msg, 403
+        else:
+            error_msg = "unknown vmss_name:" + vmss_name
+            return error_msg, 403
+        return "Workflow Job launched", 201
 
 
 api.add_resource(ApiAutoScale, '/autoscale/<vmss_name>')
