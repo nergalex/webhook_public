@@ -8,7 +8,7 @@ import pprint
 
 global tower
 tower = {
-    'hostname': '10.0.0.30',
+    'hostname': '212.121.177.199',
     'username': 'webhook-nginx-unit',
     'password': 'webhook-nginx-unit',
     'client_id': 'Ric3P6v9MGxTMOivs9xNeBVFw4IhpKyteWqOEUAi',
@@ -94,9 +94,6 @@ class ApiAutoScale(Resource):
             description: A job has been launched on Ansible Tower
          """
         data_json = request.get_json(force=True)
-        logger.info("api=ApiAutoScale;method=POST;vmss=%s;operation=%s;id=%s;resourceRegion=%s" %
-                    (data_json['context']['resourceName'], data_json['operation'], data_json['context']['id'], data_json['context']['resourceRegion']))
-
         orchestrator = SDK.TowerApi(
             host=tower['hostname'],
             username=tower['username'],
@@ -109,7 +106,6 @@ class ApiAutoScale(Resource):
         extra_vars = {
             'extra_location': data_json['context']['resourceRegion'],
             'extra_vmss_name': data_json['context']['resourceName'],
-            'extra_vmss_id': data_json['context']['resourceId'],
         }
 
         if vmss_name.startswith('nginxwaf'):
@@ -154,6 +150,11 @@ class ApiAutoScale(Resource):
             else:
                 error_msg = "unknown operation:" + data_json['operation']
                 return error_msg, 403
+        elif vmss_name.startswith('test'):
+            orchestrator.workflow_job_templates__id_launch(
+                name='wf-autoscale_webhook_test',
+                extra_vars=extra_vars
+            )
         else:
             error_msg = "unknown vmss_name:" + vmss_name
             return error_msg, 403
@@ -164,8 +165,10 @@ api.add_resource(ApiAutoScale, '/autoscale/<vmss_name>')
 
 # Start program
 if __name__ == '__main__':
+    print("Dev Portal: http://127.0.0.1:5000/apidocs/")
     application.run(
         host="0.0.0.0",
+        use_reloader=True,
         port=5000
     )
 
