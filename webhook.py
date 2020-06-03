@@ -21,6 +21,7 @@ application = Flask(__name__)
 api = Api(application)
 swagger = Swagger(application)
 
+
 @swagger.definition('vmss_context', tags=['v2_model'])
 class VMSSContext(object):
     """
@@ -164,6 +165,7 @@ api.add_resource(ApiAutoScale, '/autoscale/<vmss_name>')
 # Start program
 if __name__ == '__main__':
     application.run(
+        host="0.0.0.0",
         port=5000
     )
 
