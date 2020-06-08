@@ -165,7 +165,6 @@ class ApiAutoScale(Resource):
 
 api.add_resource(ApiAutoScale, '/autoscale/<vmss_name>')
 
-"""
 # Start program
 if __name__ == '__main__':
     print("Dev Portal: http://127.0.0.1:5000/apidocs/")
@@ -174,5 +173,4 @@ if __name__ == '__main__':
         use_reloader=True,
         port=5000
     )
-"""
 
