@@ -18,6 +18,12 @@ tower = {
 # -------------- API --------------
 # listener
 application = Flask(__name__)
+"""
+application.config['SWAGGER'] = {
+    'title': 'webhook autoscale F5',
+    'openapi': '3.0.2'
+}
+"""
 api = Api(application)
 swagger = Swagger(application)
 
@@ -171,7 +177,6 @@ if __name__ == '__main__':
         use_reloader=True,
         port=5000
     )
-
 
 
 
