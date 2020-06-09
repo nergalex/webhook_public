@@ -16,6 +16,15 @@ application.config['SWAGGER'] = {
 api = Api(application)
 swagger = Swagger(application)
 
+global tower
+tower = {
+    'hostname': '212.121.177.199',
+    'username': 'webhook-nginx-unit',
+    'password': 'webhook-nginx-unit',
+    'client_id': 'Ric3P6v9MGxTMOivs9xNeBVFw4IhpKyteWqOEUAi',
+    'client_secret': 'Lbw165xlH53vE03D8J2teJLqx30Xq5bPs3kysqbQSPDbOSlGkiJPlqMpZc3HOQ1FjF0YkcdMjiRu1z4BLzT9qmidJDHXQsFQ9BSJ2E2ymfWJlYxBFzzBLFXlt0Eix2sl'
+}
+
 
 @swagger.definition('vmss_context', tags=['v2_model'])
 class VMSSContext(object):
@@ -88,13 +97,6 @@ class ApiAutoScale(Resource):
           200:
             description: A job has been launched on Ansible Tower
          """
-        tower = {
-            'hostname': '212.121.177.199',
-            'username': 'webhook-nginx-unit',
-            'password': 'webhook-nginx-unit',
-            'client_id': 'Ric3P6v9MGxTMOivs9xNeBVFw4IhpKyteWqOEUAi',
-            'client_secret': 'Lbw165xlH53vE03D8J2teJLqx30Xq5bPs3kysqbQSPDbOSlGkiJPlqMpZc3HOQ1FjF0YkcdMjiRu1z4BLzT9qmidJDHXQsFQ9BSJ2E2ymfWJlYxBFzzBLFXlt0Eix2sl'
-        }
         data_json = request.get_json(force=True)
         orchestrator = SDK.TowerApi(
             host=tower['hostname'],
