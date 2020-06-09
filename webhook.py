@@ -2,10 +2,91 @@ from flask import (Flask, request)
 from flask_restful import (Api, Resource)
 from flasgger import Swagger
 from Tower import SDK
+import configparser
+import logging
+
+# imported parameters in .ini file :
+ini_file = 'webhook.ini'
+ini_tower_section           = "tower"
+ini_tower_hostname            = "hostname"
+ini_tower_username            = "username"
+ini_tower_password            = "password"
+ini_tower_client_id           = "client_id"
+ini_tower_client_secret       = "client_secret"
+ini_log_section           = "log"
+ini_log_state       = "state"
+ini_log_file       = "file"
+ini_log_level       = "level"
+
+
+def setup_logging(log_file, log_level):
+    if log_level == 'debug':
+        log_level = logging.DEBUG
+    elif log_level in ('verbose', 'info'):
+        log_level = logging.INFO
+    else:
+        log_level = logging.WARNING
+
+    logging.basicConfig(filename=log_file, format='%(asctime)s %(levelname)s %(message)s', level=log_level)
+    return logging.getLogger(__name__)
+
+
+class ConfigParameter(object):
+    def __init__(self):
+        self.tower_hostname = ''
+        self.tower_username = ''
+        self.tower_password = ''
+        self.tower_client_id = ''
+        self.tower_client_secret = ''
+        self.log_state = 'off'
+        self.log_file = '/var/logs/webhook/webhook.log'
+        self.log_level = 'info'
+        self.parse_file()
+
+    def parse_file(self):
+        if config.has_section(ini_tower_section):
+            if config.has_option(ini_tower_section, ini_tower_hostname):
+                self.tower_hostname = config.get(ini_tower_section, ini_tower_hostname)
+            if config.has_option(ini_tower_section, ini_tower_username):
+                self.tower_username = config.get(ini_tower_section, ini_tower_username)
+            if config.has_option(ini_tower_section, ini_tower_password):
+                self.tower_password = config.get(ini_tower_section, ini_tower_password)
+            if config.has_option(ini_tower_section, ini_tower_client_id):
+                self.tower_client_id = config.get(ini_tower_section, ini_tower_client_id)
+            if config.has_option(ini_tower_section, ini_tower_client_secret):
+                self.tower_client_secret = config.get(ini_tower_section, ini_tower_client_secret)
+        else:
+            raise ValueError('No Tower Section in .ini file')
+
+        if config.has_section(ini_log_section):
+            if config.has_option(ini_log_section, ini_log_state):
+                self.log_state = config.get(ini_log_section, ini_log_state)
+            if config.has_option(ini_log_section, ini_log_file):
+                self.log_file = config.get(ini_log_section, ini_log_file)
+            if config.has_option(ini_log_section, ini_log_level):
+                self.log_level = config.get(ini_log_section, ini_log_level)
+
+
+# Load global configuration
+global param
+config = configparser.RawConfigParser()
+config.read(ini_file)
+param = ConfigParameter()
+global logger
+logger = setup_logging(param.log_file, param.log_level)
+global tower
+tower = {
+    'hostname': param.tower_hostname,
+    'username': param.tower_username,
+    'password': param.tower_password,
+    'client_id': param.tower_client_id,
+    'client_secret': param.tower_client_secret
+}
 
 
 # -------------- API --------------
 # listener
+logger.warning("webhook started")
 application = Flask(__name__)
 """
 application.config['SWAGGER'] = {
@@ -15,15 +96,6 @@ application.config['SWAGGER'] = {
 """
 api = Api(application)
 swagger = Swagger(application)
-
-global tower
-tower = {
-    'hostname': '212.121.177.199',
-    'username': 'webhook-nginx-unit',
-    'password': 'webhook-nginx-unit',
-    'client_id': 'Ric3P6v9MGxTMOivs9xNeBVFw4IhpKyteWqOEUAi',
-    'client_secret': 'Lbw165xlH53vE03D8J2teJLqx30Xq5bPs3kysqbQSPDbOSlGkiJPlqMpZc3HOQ1FjF0YkcdMjiRu1z4BLzT9qmidJDHXQsFQ9BSJ2E2ymfWJlYxBFzzBLFXlt0Eix2sl'
-}
 
 
 @swagger.definition('vmss_context', tags=['v2_model'])
@@ -66,6 +138,7 @@ class ApiAutoScale(Resource):
             description: The task data
         """
         msg = "Monitor test " + vmss_name + " OK"
+        logger.debug(msg)
         return msg, 201
 
     def post(self, vmss_name):
@@ -98,6 +171,8 @@ class ApiAutoScale(Resource):
             description: A job has been launched on Ansible Tower
          """
         data_json = request.get_json(force=True)
+        logger.info("api=ApiAutoScale;method=POST;vmss=%s;operation=%s;id=%s;resourceRegion=%s" %
+                    (data_json['context']['resourceName'], data_json['operation'], data_json['context']['id'], data_json['context']['resourceRegion']))
         orchestrator = SDK.TowerApi(
             host=tower['hostname'],
             username=tower['username'],
