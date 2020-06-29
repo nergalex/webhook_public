@@ -155,7 +155,7 @@ class ApiAutoScale(Resource):
         if vmss_name.startswith('nginxwaf'):
             if data_json['operation'].lower() == 'scale out':
                 orchestrator.workflow_job_templates__id_launch(
-                    name='wf-scale_out_nginx_app_protect',
+                    name='wf-scale_out_nginx_app_protect_from_nginx_repo',
                     extra_vars=extra_vars
                 )
             elif data_json['operation'].lower() == 'scale in':
