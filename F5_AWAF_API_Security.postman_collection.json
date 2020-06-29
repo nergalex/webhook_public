@@ -1,0 +1,511 @@
+{
+	"info": {
+		"_postman_id": "a5352613-5a74-4383-8dca-90e019e2e4c9",
+		"name": "F5_AWAF_API_Security",
+		"description": "DOWNLOAD AS3\r\n\thttps://github.com/F5Networks/f5-appsvcs-extension/releases\r\n\r\nINSTALL AS3\r\n\t$ curl -kvu admin:F5N3tworks! \"https://10.0.0.99:8443/mgmt/shared/iapp/package-management-tasks\" -H \"Origin: https://10.0.0.99\" -H \"Content-Type: application/json;charset=UTF-8\" --data  '{\"operation\":\"INSTALL\",\"packageFilePath\":\"/var/config/rest/downloads/f5-appsvcs-3.17.1-1.noarch.rpm\"}'\r\n\t\r\n\t$ curl -sku admin:F5N3tworks! https://10.0.0.99:8443/mgmt/shared/appsvcs/info\r\n\r\nCHECK UPLOAD\r\n\t$ ll /var/config/rest/downloads/",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. GET auth token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "5b053e98-db89-4b72-bc38-b248d6a1dfe4",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"",
+							"pm.environment.set(\"auth_token\", jsonData.token.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\":\"{{bigip_username}}\",\n    \"password\":\"{{bigip_password}}\",\n    \"loginProviderName\":\"tmos\"\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/shared/authn/login",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"authn",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. CREATE App API via AS3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "31005f2a-0333-46bd-a6f8-5e9e8fd9845b",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"class\": \"AS3\",\n    \"action\": \"deploy\",\n    \"persist\": true,\n    \"declaration\": {\n        \"class\": \"ADC\",\n        \"schemaVersion\": \"3.12.0\",\n        \"{{tenant_name}}\": {\n            \"class\": \"Tenant\",\n             \"{{app_name}}\": {\n                \"class\": \"Application\",\n                \"template\": \"generic\",\n                \"vs-{{app_name}}\": {\n                    \"class\": \"Service_HTTP\",\n                    \"virtualPort\": 80,\n                    \"virtualAddresses\": [\n                        \"{{app_vip_listener}}\"\n                    ],\n                    \"policyWAF\": {\n                        \"use\": \"waf_policy-{{app_name}}\"\n                    },\n                    \"pool\": \"pool_{{app_name}}\"\n                },\n                \"pool_{{app_name}}\": {\n                    \"class\": \"Pool\",\n                    \"monitors\": [\"tcp\"],\n                    \"members\": [\n                        {\n                            \"servicePort\": 8000,\n                            \"serverAddresses\": [\"10.1.0.20\"],\n                            \"updateInterval\": 10\n                        }\n                    ]\n                },\n                \"waf_policy-{{app_name}}\": {\n                    \"class\": \"WAF_Policy\",\n                    \"url\": \"https://raw.githubusercontent.com/nergalex/PublicCloudBuilder/master/template/F5/asm_api_policy_empty.xml\",\n                    \"ignoreChanges\": true\n                }\n            }\n        }\n    }\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/shared/appsvcs/declare",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"appsvcs",
+						"declare"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2.GET_last_AS3_declaration",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/shared/appsvcs/declare",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"appsvcs",
+						"declare"
+					]
+				},
+				"description": "example-clone-pools"
+			},
+			"response": []
+		},
+		{
+			"name": "3. GET policyID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "2a4ea8ba-6574-4208-8c1b-7d015cb797be",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"",
+							"pm.environment.set(\"waf_policy_id\", jsonData.items[0].id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/tm/asm/policies?$filter=fullPath eq /{{tenant_name}}/{{app_name}}/waf_policy-{{app_name}}",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"tm",
+						"asm",
+						"policies"
+					],
+					"query": [
+						{
+							"key": "$filter",
+							"value": "fullPath eq /{{tenant_name}}/{{app_name}}/waf_policy-{{app_name}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. UPLOAD OpenAPI spec file_1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "89261a4d-71df-46f7-9ab8-a891138f29bd",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/octet-stream",
+						"type": "text"
+					},
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					},
+					{
+						"key": "Content-range",
+						"value": "0-2557/2558",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"definitions\":{\"vmss_context\":{\"description\":\"Recommendation Query Context\",\"properties\":{\"resourceId\":{\"description\":\"VMSS ID\",\"type\":\"string\"},\"resourceName\":{\"default\":\"test\",\"description\":\"VMSS name\",\"enum\":[\"awaf\",\"nginxapigw\",\"nginxwaf\",\"test\"],\"type\":\"string\"},\"resourceRegion\":{\"description\":\"VMSS location\",\"type\":\"string\"}},\"required\":[\"id\",\"resourceName\",\"resourceRegion\"]}},\"info\":{\"description\":\"powered by Flasgger\",\"termsOfService\":\"/tos\",\"title\":\"A swagger API\",\"version\":\"0.0.1\"},\"paths\":{\"/autoscale/{vmss_name}\":{\"get\":{\"parameters\":[{\"description\":\"VMSS name\",\"in\":\"path\",\"name\":\"vmss_name\",\"required\":true,\"type\":\"string\"}],\"responses\":{\"200\":{\"description\":\"The task data\"}},\"summary\":\"Get monitor status\",\"tags\":[\"vmss\"]},\"post\":{\"consumes\":[\"application/json; charset=utf-8\"],\"parameters\":[{\"in\":\"body\",\"name\":\"body\",\"schema\":{\"properties\":{\"context\":{\"$ref\":\"#/definitions/vmss_context\",\"schema\":null,\"type\":\"object\"},\"operation\":{\"default\":\"Scale Out\",\"description\":\"VM Scale Set Operation\",\"enum\":[\"Scale In\",\"Scale Out\"],\"type\":\"string\"}},\"required\":[\"operation\",\"context\"]}}],\"responses\":{\"200\":{\"description\":\"A job has been launched on Ansible Tower\"}},\"summary\":\"Launch a new VM Scale Set synchronization\",\"tags\":[\"vmss\"]}}},\"swagger\":\"2.0\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/tm/asm/file-transfer/uploads/{{app_name}}_openapi_spec_file.yaml",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"tm",
+						"asm",
+						"file-transfer",
+						"uploads",
+						"{{app_name}}_openapi_spec_file.yaml"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. IMPORT OpenAPI spec file",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "9a9c8f2d-338f-4b31-8acd-59f8621c825b",
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"",
+							"pm.environment.set(\"import_open_api_id\", jsonData.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"filename\": \"{{app_name}}_openapi_spec_file.yaml\",\n    \"policyReference\": {\n        \"link\": \"https://localhost/mgmt/tm/asm/policies/{{waf_policy_id}}\"\n    }\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/tm/asm/tasks/import-open-api/",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"tm",
+						"asm",
+						"tasks",
+						"import-open-api",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. CHECK import task",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "6fc77a52-5027-4e40-a177-3251a1238bfb",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"filename\": \"{{app_name}}_openapi_spec_file.yaml\",\n    \"policyReference\": {\n        \"link\": \"https://localhost/mgmt/tm/asm/policies/{{waf_policy_id}}\"\n    }\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/tm/asm/tasks/import-open-api/{{import_open_api_id}}",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"tm",
+						"asm",
+						"tasks",
+						"import-open-api",
+						"{{import_open_api_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. APPLY WAF policy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "94ac4458-6ff6-4994-abf7-4057e62015c0",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"policyReference\": {\n        \"link\": \"https://localhost/mgmt/tm/asm/policies/{{waf_policy_id}}\"\n    }\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/tm/asm/tasks/apply-policy",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"tm",
+						"asm",
+						"tasks",
+						"apply-policy"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. DELETE App API via AS3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e18f3005-6e97-412b-9241-3013fd3caa02",
+						"exec": [
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "X-F5-Auth-Token",
+						"type": "text",
+						"value": "{{auth_token}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"class\": \"AS3\",\n    \"action\": \"deploy\",\n    \"persist\": true,\n    \"declaration\": {\n        \"class\": \"ADC\",\n        \"schemaVersion\": \"3.12.0\",\n        \"{{tenant_name}}\": {\n            \"class\": \"Tenant\"\n        }\n    }\n}"
+				},
+				"url": {
+					"raw": "https://{{bigip_mgt_ip}}/mgmt/shared/appsvcs/declare",
+					"protocol": "https",
+					"host": [
+						"{{bigip_mgt_ip}}"
+					],
+					"path": [
+						"mgmt",
+						"shared",
+						"appsvcs",
+						"declare"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "b981a79a-78c6-4d45-9f76-fd2ce8cb789c",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "05bcdce1-aa5b-471c-bfa8-9ea1f0207f2d",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "7c7f5837-8b04-4c3c-875d-100aae611217",
+			"key": "bigip_mgt_ip",
+			"value": "127.0.0.99"
+		},
+		{
+			"id": "7b5737f3-0568-42bf-afab-c6681f3e1df0",
+			"key": "bigip_username",
+			"value": "admin"
+		},
+		{
+			"id": "e7c9bc13-2c1f-426c-90e7-102089ea2838",
+			"key": "bigip_password",
+			"value": "Ch4ngeMe!"
+		},
+		{
+			"id": "5be13644-8a9b-46e1-a0bf-9c29a02abe1b",
+			"key": "app_vip_listener",
+			"value": "1.1.1.1"
+		},
+		{
+			"id": "e2e09693-650c-442a-a8b9-ed70a578f867",
+			"key": "app_name",
+			"value": "myApp"
+		},
+		{
+			"id": "07452a2f-b7f4-4cc1-a675-ccaf4893628b",
+			"key": "tenant_name",
+			"value": "myTenant"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

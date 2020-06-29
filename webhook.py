@@ -81,7 +81,9 @@ class VMSSContext(object):
         description: VMSS ID
       resourceName:
         type: string
+        default: test
         description: VMSS name
+        enum: ['awaf', 'nginxapigw', 'nginxwaf', 'test']
       resourceRegion:
         type: string
         description: VMSS location
