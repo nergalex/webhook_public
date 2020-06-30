@@ -38,12 +38,11 @@ class ConfigParameter(object):
         else:
             raise ValueError('No Tower Section in .ini file')
 
+
 # Load global configuration
-global param
 config = configparser.RawConfigParser()
 config.read(ini_file)
 param = ConfigParameter()
-global tower
 tower = {
     'hostname': param.tower_hostname,
     'username': param.tower_username,
