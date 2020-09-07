@@ -104,7 +104,17 @@ class ApiAutoScale(Resource):
             type: string
         responses:
           200:
-            description: The task data
+            description: Returns a URL link
+            schema:
+              id: Users
+              type: object
+              properties:
+                users:
+                  type: array
+                  items:
+                    $ref: '#/definitions/User'
+            examples:
+              users: [{'name': 'Russel Allen', 'team': 66}]
         """
         msg = "Monitor test " + vmss_name + " OK"
         return msg, 201
@@ -154,28 +164,31 @@ class ApiAutoScale(Resource):
         }
 
         if vmss_name.startswith('nginxwaf'):
+            extra_vars['extra_env_prefix'] = "env_NORTH_"
             if data_json['operation'].lower() == 'scale out':
+                # wf-scale_out_nginx_app_protect_from_nginx_repo
                 orchestrator.workflow_job_templates__id_launch(
-                    name='wf-scale_out_nginx_app_protect_from_nginx_repo',
+                    name='wf-scale_out_nginx_controller_north',
                     extra_vars=extra_vars
                 )
             elif data_json['operation'].lower() == 'scale in':
                 orchestrator.workflow_job_templates__id_launch(
-                    name='wf-scale_in_nginx',
+                    name='wf-scale_in_nginx_controller',
                     extra_vars=extra_vars
                 )
             else:
                 error_msg = "unknown operation:" + data_json['operation']
                 return error_msg, 403
         elif vmss_name.startswith('nginxapigw'):
+            extra_vars['extra_env_prefix'] = "env_SOUTH_"
             if data_json['operation'].lower() == 'scale out':
                 orchestrator.workflow_job_templates__id_launch(
-                    name='wf-scale_out_nginx_second_line',
+                    name='wf-scale_out_nginx_controller_south',
                     extra_vars=extra_vars
                 )
             elif data_json['operation'].lower() == 'scale in':
                 orchestrator.workflow_job_templates__id_launch(
-                    name='wf-scale_in_nginx',
+                    name='wf-scale_in_nginx_controller',
                     extra_vars=extra_vars
                 )
             else:
