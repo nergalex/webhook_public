@@ -172,6 +172,7 @@ class ApiAutoScale(Resource):
                     extra_vars=extra_vars
                 )
             elif data_json['operation'].lower() == 'scale in':
+                # wf-scale_in_nginx_controller
                 orchestrator.workflow_job_templates__id_launch(
                     name='wf-scale_in_nginx_controller',
                     extra_vars=extra_vars
@@ -182,11 +183,13 @@ class ApiAutoScale(Resource):
         elif vmss_name.startswith('nginxapigw'):
             extra_vars['extra_env_prefix'] = "env_SOUTH_"
             if data_json['operation'].lower() == 'scale out':
+                # wf-scale_out_nginx_second_line
                 orchestrator.workflow_job_templates__id_launch(
                     name='wf-scale_out_nginx_controller_south',
                     extra_vars=extra_vars
                 )
             elif data_json['operation'].lower() == 'scale in':
+                # wf-scale_in_nginx_controller
                 orchestrator.workflow_job_templates__id_launch(
                     name='wf-scale_in_nginx_controller',
                     extra_vars=extra_vars
