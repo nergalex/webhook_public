@@ -164,7 +164,7 @@ class ApiAutoScale(Resource):
         }
 
         if vmss_name.startswith('nginxwaf'):
-            extra_vars['extra_env_prefix'] = "env_NORTH_"
+            extra_vars['extra_env_prefix'] = "env_north_"
             if data_json['operation'].lower() == 'scale out':
                 # wf-scale_out_nginx_app_protect_from_nginx_repo
                 orchestrator.workflow_job_templates__id_launch(
@@ -181,7 +181,7 @@ class ApiAutoScale(Resource):
                 error_msg = "unknown operation:" + data_json['operation']
                 return error_msg, 403
         elif vmss_name.startswith('nginxapigw'):
-            extra_vars['extra_env_prefix'] = "env_SOUTH_"
+            extra_vars['extra_env_prefix'] = "env_south_"
             if data_json['operation'].lower() == 'scale out':
                 # wf-scale_out_nginx_second_line
                 orchestrator.workflow_job_templates__id_launch(
